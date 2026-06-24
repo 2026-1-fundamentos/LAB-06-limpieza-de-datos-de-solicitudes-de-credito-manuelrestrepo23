@@ -87,3 +87,6 @@ def pregunta_01():
     save_data(df, archivo_salida)
 
     return df
+
+if __name__ == "__main__":
+    pregunta_01()

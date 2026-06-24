@@ -74,3 +74,4 @@ def pregunta_01():
     save_data(df, archivo_salida)
 
     return df
+print(pregunta_01())

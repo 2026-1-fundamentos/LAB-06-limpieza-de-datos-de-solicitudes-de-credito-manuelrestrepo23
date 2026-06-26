@@ -2,11 +2,13 @@
 Escriba el codigo que ejecute la accion solicitada en la pregunta.
 """
 import os
+
 import pandas as pd
+
 
 def load_data(input_file):
 
-    df = pd.read_csv(input_file, sep=";")
+    df = pd.read_csv(input_file, sep=";", index_col=0)
     return df
 
 
@@ -14,53 +16,39 @@ def clean_data(df):
 
     df = df.copy()
 
-  
-    df = df.drop(columns=["Unnamed: 0"])
     df = df.dropna()
 
-    puntuacion = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+    for col in ["sexo", "tipo_de_emprendimiento", "idea_negocio", "línea_credito"]:
+        df[col] = df[col].str.lower().str.strip()
 
-    df["sexo"] = df["sexo"].str.strip().str.lower()
+    for col in ["idea_negocio", "línea_credito"]:
+        df[col] = (
+            df[col]
+            .str.replace("-", " ", regex=False)
+            .str.replace("_", " ", regex=False)
+            .str.replace(r"\s+", " ", regex=True)
+            .str.strip()
+        )
 
-    df["tipo_de_emprendimiento"] = df["tipo_de_emprendimiento"].str.strip().str.lower()
-    df["tipo_de_emprendimiento"] = df["tipo_de_emprendimiento"].str.translate(
-        str.maketrans(puntuacion, " " * len(puntuacion))
+    df["barrio"] = (
+        df["barrio"]
+        .str.lower()
+        .str.replace("-", " ", regex=False)
+        .str.replace("_", " ", regex=False)
     )
-    df["tipo_de_emprendimiento"] = (
-        df["tipo_de_emprendimiento"].str.replace(r"\s+", " ", regex=True).str.strip()
+
+    df["monto_del_credito"] = (
+        df["monto_del_credito"]
+        .str.replace(r"[\$,\s]", "", regex=True)
+        .str.replace(r"\.00$", "", regex=True)
+        .str.replace(".", "", regex=False)
+        .astype(float)
+        .astype(int)
     )
 
-    df["idea_negocio"] = df["idea_negocio"].str.strip().str.lower()
-    df["idea_negocio"] = df["idea_negocio"].str.translate(
-        str.maketrans(puntuacion, " " * len(puntuacion))
-    )
-    df["idea_negocio"] = (
-        df["idea_negocio"].str.replace(r"\s+", " ", regex=True).str.strip()
-    )
-
-    df["barrio"] = df["barrio"].str.strip().str.lower()
-    df["barrio"] = df["barrio"].str.translate(
-        str.maketrans(puntuacion, " " * len(puntuacion))
-    )
-    df["barrio"] = df["barrio"].str.replace(r"\s+", " ", regex=True).str.strip()
-
-    df["línea_credito"] = df["línea_credito"].str.strip().str.lower()
-    df["línea_credito"] = df["línea_credito"].str.replace(" ", "_", regex=False)
-    df["línea_credito"] = df["línea_credito"].str.replace("-", "_", regex=False)
-    df["línea_credito"] = df["línea_credito"].str.replace(".", "_", regex=False)
-    df["línea_credito"] = df["línea_credito"].str.replace(r"_+", "_", regex=True)
-
-    df["monto_del_credito"] = df["monto_del_credito"].str.replace("$", "", regex=False)
-    df["monto_del_credito"] = df["monto_del_credito"].str.replace(",", "", regex=False)
-    df["monto_del_credito"] = df["monto_del_credito"].str.strip()
-    df["monto_del_credito"] = df["monto_del_credito"].astype(float).astype(int)
-
-    df["fecha_de_beneficio"] = pd.to_datetime(
-        df["fecha_de_beneficio"],
-        format="mixed",
-        dayfirst=True,
-    )
-    df["fecha_de_beneficio"] = df["fecha_de_beneficio"].dt.strftime("%Y-%m-%d")
+    f1 = pd.to_datetime(df["fecha_de_beneficio"], format="%d/%m/%Y", errors="coerce")
+    f2 = pd.to_datetime(df["fecha_de_beneficio"], format="%Y/%m/%d", errors="coerce")
+    df["fecha_de_beneficio"] = f1.fillna(f2)
 
     df["comuna_ciudadano"] = df["comuna_ciudadano"].astype(int)
 
@@ -87,6 +75,3 @@ def pregunta_01():
     save_data(df, archivo_salida)
 
     return df
-
-if __name__ == "__main__":
-    pregunta_01()
